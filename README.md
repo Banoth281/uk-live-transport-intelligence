@@ -165,22 +165,34 @@ Tests include:
 
 ## 📊 Dashboard
 
-The Streamlit dashboard provides a live view of the transport data platform.
+The Streamlit dashboard provides a real-time analytical view of TfL transport data, refreshing automatically every 30 seconds.
 
-Headline metrics include:
+### Live Transport Overview
 
-- Total predictions
+The dashboard displays key operational metrics including:
+
+- Total arrival predictions
 - Active vehicles
-- Average wait
+- Average passenger wait time
 - Arrivals within three minutes
 - Station-level performance
 
-The dashboard provides an interactive view of real-time transport analytics, allowing station performance and expected waiting times to be compared across the network.
-
-### Live Transport Analytics Dashboard
-
 ![UK Live Transport Intelligence Dashboard](docs/images/dashboard.png)
 
+### Station & Arrival Analytics
+
+The platform also provides deeper operational analytics, including:
+
+- Stations with the shortest average waiting times
+- Stations with the highest average waiting times
+- Unique vehicle counts by station
+- Arrivals within three minutes
+- Recent arrival predictions
+- Destination and direction information
+- Platform information
+- Wait-time classification
+
+![UK Transport Station and Arrival Analytics](docs/images/transport-analytics.png)
 ---
 
 ## 🔌 FastAPI
