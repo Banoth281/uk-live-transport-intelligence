@@ -1,0 +1,34 @@
+version: 2
+
+sources:
+  - name: transport
+    database: transport
+    schema: public
+    tables:
+      - name: arrivals
+
+models:
+  - name: stg_arrivals
+    description: "Cleaned and validated live TfL arrival prediction events."
+
+    columns:
+      - name: arrival_id
+        tests:
+          - not_null
+          - unique
+
+      - name: line_id
+        tests:
+          - not_null
+
+      - name: station_name
+        tests:
+          - not_null
+
+      - name: time_to_station
+        tests:
+          - not_null
+
+      - name: expected_arrival
+        tests:
+          - not_null

@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: fact_arrivals
+    description: "Gold-level fact model containing validated TfL arrival prediction events."
+
+    columns:
+      - name: arrival_id
+        tests:
+          - not_null
+          - unique
+
+      - name: station_id
+        tests:
+          - not_null
+
+      - name: station_name
+        tests:
+          - not_null
+
+      - name: time_to_station
+        tests:
+          - not_null
+
+      - name: wait_band
+        tests:
+          - not_null
+
+  - name: station_performance
+    description: "Station-level operational metrics derived from live TfL arrival predictions."
+
+    columns:
+      - name: station_id
+        tests:
+          - not_null
+          - unique
+
+      - name: station_name
+        tests:
+          - not_null
+
+      - name: avg_wait_minutes
+        tests:
+          - not_null
+
+      - name: prediction_count
+        tests:
+          - not_null
+
+  - name: line_performance
+    description: "Aggregated performance metrics by TfL line."
+
+    columns:
+      - name: line_id
+        tests:
+          - not_null
+          - unique
+
+      - name: line_name
+        tests:
+          - not_null
+
+      - name: avg_wait_minutes
+        tests:
+          - not_null
