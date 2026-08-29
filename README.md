@@ -9,6 +9,11 @@
 
 A real-time data engineering platform that ingests live Transport for London (TfL) arrival predictions, streams events through Redpanda/Kafka, stores them in PostgreSQL, transforms the data with dbt, exposes analytical endpoints through FastAPI, and presents transport intelligence through an interactive Streamlit dashboard.
 
+> **Recruiter demo:** the Streamlit dashboard automatically uses a representative
+> TfL snapshot when the local FastAPI service is unavailable. Follow the
+> [public demo deployment](#-deploy-the-public-recruiter-demo) steps to create a
+> shareable `streamlit.app` URL.
+
 ---
 
 ## 📌 Project Overview
@@ -217,11 +222,14 @@ Example response:
 }
 ```
 
-Interactive API documentation is available locally at:
+Interactive API documentation is available **only while the FastAPI service is
+running locally** at:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+`127.0.0.1` is a development address and is not a public recruiter demo.
 
 ---
 
@@ -289,6 +297,39 @@ uk-live-transport-intelligence/
 ```
 
 ---
+
+## 🌐 Deploy the Public Recruiter Demo
+
+The public demo does not require Kafka, PostgreSQL, dbt or FastAPI. It uses the
+representative snapshot in `dashboard/demo_data.json`. When a reachable API is
+configured, the same dashboard automatically switches to live mode.
+
+1. Push this repository to GitHub.
+2. Sign in to [Streamlit Community Cloud](https://share.streamlit.io/) with GitHub.
+3. Select **Create app** and enter:
+   - Repository: `Banoth281/uk-live-transport-intelligence`
+   - Branch: `main`
+   - App file: `dashboard/app.py`
+   - Python version: `3.12`
+4. Choose an available app URL and select **Deploy**.
+5. Open the public URL in a private browser window to confirm recruiter access.
+
+Streamlit will use `dashboard/requirements.txt`, keeping the hosted demo small
+and independent from the full engineering environment.
+
+After deployment, add the real URL near the top of this README:
+
+```markdown
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Open_Dashboard-FF4B4B?logo=streamlit&logoColor=white)](https://YOUR-APP.streamlit.app)
+```
+
+Replace `https://YOUR-APP.streamlit.app` with the URL created by Streamlit.
+
+### Optional live API mode
+
+Set the `API_BASE_URL` environment variable to a publicly hosted FastAPI base
+URL. If that service is reachable, the dashboard displays live data; otherwise,
+it falls back safely to the portfolio snapshot.
 
 ## 🚀 Running Locally
 

@@ -1,0 +1,27 @@
+{
+  "line_performance": {"prediction_count": 2939, "unique_vehicles": 42, "avg_wait_minutes": 4.18, "arrivals_within_3_minutes": 1124},
+  "station_performance": [
+    {"station_name": "Pimlico", "avg_wait_minutes": 2.31, "unique_vehicles": 11, "arrivals_within_3_minutes": 96},
+    {"station_name": "Vauxhall", "avg_wait_minutes": 2.68, "unique_vehicles": 15, "arrivals_within_3_minutes": 104},
+    {"station_name": "Victoria", "avg_wait_minutes": 3.05, "unique_vehicles": 18, "arrivals_within_3_minutes": 127},
+    {"station_name": "Stockwell", "avg_wait_minutes": 3.42, "unique_vehicles": 16, "arrivals_within_3_minutes": 89},
+    {"station_name": "Green Park", "avg_wait_minutes": 3.77, "unique_vehicles": 17, "arrivals_within_3_minutes": 115},
+    {"station_name": "Oxford Circus", "avg_wait_minutes": 4.02, "unique_vehicles": 20, "arrivals_within_3_minutes": 132},
+    {"station_name": "Warren Street", "avg_wait_minutes": 4.36, "unique_vehicles": 14, "arrivals_within_3_minutes": 81},
+    {"station_name": "Euston", "avg_wait_minutes": 4.71, "unique_vehicles": 19, "arrivals_within_3_minutes": 108},
+    {"station_name": "King's Cross St Pancras", "avg_wait_minutes": 5.09, "unique_vehicles": 21, "arrivals_within_3_minutes": 121},
+    {"station_name": "Highbury & Islington", "avg_wait_minutes": 5.44, "unique_vehicles": 13, "arrivals_within_3_minutes": 73},
+    {"station_name": "Finsbury Park", "avg_wait_minutes": 5.83, "unique_vehicles": 15, "arrivals_within_3_minutes": 79},
+    {"station_name": "Brixton", "avg_wait_minutes": 6.12, "unique_vehicles": 12, "arrivals_within_3_minutes": 68}
+  ],
+  "recent_arrivals": [
+    {"line_name": "Victoria", "station_name": "Euston Underground Station", "destination_name": "Brixton Underground Station", "direction": "outbound", "minutes_to_station": 2.27, "platform_name": "Southbound - Platform 4", "wait_band": "0-3 min"},
+    {"line_name": "Victoria", "station_name": "Pimlico Underground Station", "destination_name": "Walthamstow Central Underground Station", "direction": "inbound", "minutes_to_station": 1.53, "platform_name": "Northbound - Platform 1", "wait_band": "0-3 min"},
+    {"line_name": "Victoria", "station_name": "Victoria Underground Station", "destination_name": "Brixton Underground Station", "direction": "outbound", "minutes_to_station": 3.82, "platform_name": "Southbound - Platform 4", "wait_band": "3-5 min"},
+    {"line_name": "Victoria", "station_name": "Oxford Circus Underground Station", "destination_name": "Walthamstow Central Underground Station", "direction": "inbound", "minutes_to_station": 4.15, "platform_name": "Northbound - Platform 6", "wait_band": "3-5 min"},
+    {"line_name": "Victoria", "station_name": "Green Park Underground Station", "destination_name": "Brixton Underground Station", "direction": "outbound", "minutes_to_station": 5.48, "platform_name": "Southbound - Platform 4", "wait_band": "5-10 min"},
+    {"line_name": "Victoria", "station_name": "King's Cross St Pancras Underground Station", "destination_name": "Brixton Underground Station", "direction": "outbound", "minutes_to_station": 7.05, "platform_name": "Southbound - Platform 4", "wait_band": "5-10 min"},
+    {"line_name": "Victoria", "station_name": "Vauxhall Underground Station", "destination_name": "Walthamstow Central Underground Station", "direction": "inbound", "minutes_to_station": 8.62, "platform_name": "Northbound - Platform 1", "wait_band": "5-10 min"},
+    {"line_name": "Victoria", "station_name": "Finsbury Park Underground Station", "destination_name": "Brixton Underground Station", "direction": "outbound", "minutes_to_station": 11.18, "platform_name": "Southbound - Platform 4", "wait_band": "10+ min"}
+  ]
+}
