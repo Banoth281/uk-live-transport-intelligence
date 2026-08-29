@@ -1,5 +1,7 @@
 # 🚇 UK Live Transport Intelligence
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Open_Dashboard-FF4B4B?logo=streamlit&logoColor=white)](https://uk-live-transport-intelligence.streamlit.app)
+
 [![UK Transport Intelligence CI](https://github.com/Banoth281/uk-live-transport-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/Banoth281/uk-live-transport-intelligence/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
