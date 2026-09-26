@@ -18,6 +18,13 @@ A real-time data engineering platform that ingests live Transport for London (Tf
 > The separate **Data pipeline analytics** tab connects to your configured
 > FastAPI service or displays a clearly labelled saved portfolio snapshot.
 
+In **Plan a journey**, enter two rail station names, select individual TfL
+station matches, and choose a returned itinerary. The page shows estimated
+duration, changes, step-by-step legs, reported issues and current line status.
+The animated route story illustrates the selected itinerary; it does not track
+an actual train. Journey estimates and service conditions can change. This
+independent project is powered by the Transport for London Journey Planner API.
+
 The live tab also includes an interactive **3D train approach**. Select any of
 the 11 Underground lines, Elizabeth line, DLR, six named Overground lines or
 Tram in one selector. Choose a station and one of its currently predicted

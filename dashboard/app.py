@@ -182,7 +182,7 @@ with journey_tab:
         else:
             st.caption(f'{planned["from"]} → {planned["to"]}. TfL estimates and service conditions can change; refresh the plan before travel.')
             selected = st.selectbox("Journey option", range(len(routes)), format_func=lambda i:
-                                    f'Option {i+1} · {routes[i]["duration"] if routes[i]["duration"] is not None else "?"} min · {routes[i]["changes"]} changes')
+                                    f'Option {i+1} · {routes[i]["duration"] if routes[i]["duration"] is not None else "?"} min · {routes[i]["changes"]} {"change" if routes[i]["changes"] == 1 else "changes"}')
             route = routes[selected]
             a, b, c = st.columns(3)
             a.metric("Estimated duration", f'{route["duration"]} min' if route["duration"] is not None else "Unavailable")
@@ -213,6 +213,7 @@ with journey_tab:
                                 st.write(status["reason"])
             if not planned["status_available"]:
                 st.caption("Live line status is unavailable; itinerary alerts above are from the journey response. Check TfL before travel.")
+    st.caption("Powered by the Transport for London Journey Planner API. This is an independent portfolio project, not an official TfL service.")
     st.markdown("[TfL Journey Planner and Unified API](https://tfl.gov.uk/info-for/open-data-users/unified-api)")
 
 with live_tab:
