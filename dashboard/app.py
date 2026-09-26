@@ -74,7 +74,7 @@ with live_tab:
     with controls:
         line_name = st.selectbox(
             "TfL rail line / route", list(LINES), index=list(LINES).index("Victoria"),
-            format_func=lambda name: f"{LINE_GROUPS[name]} · {name}",
+            format_func=lambda name: name if LINE_GROUPS[name] == name else f"{LINE_GROUPS[name]} · {name}",
         )
         st.caption("Underground, Elizabeth line, DLR, six Overground lines and Tram. Select a line to load its current predictions.")
     with refresh:
