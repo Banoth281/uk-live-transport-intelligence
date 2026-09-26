@@ -47,7 +47,14 @@ def search_stations(query, *, api_key=None, session=None):
 def normalise_journeys(payload):
     if not isinstance(payload, dict) or not isinstance(payload.get("journeys"), list):
         keys = ", ".join(sorted(payload.keys())) if isinstance(payload, dict) else type(payload).__name__
-        raise ValueError(f"TfL did not return journey options for those stations (response fields: {keys}).")
+        details = []
+        if isinstance(payload, dict):
+            for side in ("fromLocationDisambiguation", "toLocationDisambiguation"):
+                data = payload.get(side) or {}
+                if isinstance(data, dict):
+                    options = data.get("disambiguationOptions") or []
+                    details.append(f"{side}: {repr(options[:2])[:700]}")
+        raise ValueError(f"TfL did not return journey options (response fields: {keys}; {'; '.join(details)}).")
     result = []
     for journey in payload["journeys"][:5]:
         if not isinstance(journey, dict) or not isinstance(journey.get("legs"), list):
