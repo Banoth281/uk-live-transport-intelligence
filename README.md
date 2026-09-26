@@ -177,7 +177,8 @@ current predictions directly from the TfL Unified API. Pick a Tube line and
 station to see upcoming predicted arrivals, destinations and platforms.
 Responses are cached for 30 seconds; **Refresh TfL feed** requests an update.
 Predictions with expected arrival times before the retrieval time are excluded,
-and displayed minutes use that expected time when TfL provides it.
+displayed minutes use that expected time when TfL provides it, and identical
+station/destination/platform/expected-time predictions are collapsed.
 The retrieval time is shown in UTC. If TfL is unavailable, the tab reports
 that error instead of displaying an old sample as live data. Predictions can
 change and are not actual arrivals. An API key is optional for low-volume

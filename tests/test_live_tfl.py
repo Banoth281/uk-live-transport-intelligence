@@ -32,6 +32,8 @@ class LiveTfLTests(unittest.TestCase):
              "expectedArrival": "2026-09-26T19:48:31Z"},
             {"stationName": "Angel", "timeToStation": 60,
              "expectedArrival": "2026-09-26T19:50:24Z"},
+            {"stationName": "Angel", "timeToStation": 65,
+             "expectedArrival": "2026-09-26T19:50:24Z"},
         ], now=now)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["minutes"], 1.5)

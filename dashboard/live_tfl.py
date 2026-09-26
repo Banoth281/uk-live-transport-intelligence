@@ -18,6 +18,7 @@ def normalise_arrivals(payload, *, now=None):
         raise ValueError("TfL returned an unexpected response.")
     now = now or datetime.now(timezone.utc)
     result = []
+    seen = set()
     for item in payload:
         if not isinstance(item, dict):
             continue
@@ -41,10 +42,17 @@ def normalise_arrivals(payload, *, now=None):
             if remaining <= 0:
                 continue
             seconds = remaining
+        destination = str(item.get("destinationName") or "Not supplied")
+        platform = str(item.get("platformName") or "Not supplied")
+        if expected:
+            identity = (station.strip(), destination, platform, expected)
+            if identity in seen:
+                continue
+            seen.add(identity)
         result.append({
             "station": station.strip(),
-            "destination": str(item.get("destinationName") or "Not supplied"),
-            "platform": str(item.get("platformName") or "Not supplied"),
+            "destination": destination,
+            "platform": platform,
             "minutes": round(seconds / 60, 1),
             "expected_arrival": expected or "",
             "vehicle_id": str(item.get("vehicleId") or ""),
