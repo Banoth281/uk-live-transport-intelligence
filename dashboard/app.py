@@ -91,7 +91,7 @@ with live_tab:
             station = st.selectbox("Station", station_names)
             station_rows = [row for row in predictions if row["station"] == station]
             station_rows.sort(key=lambda row: row["minutes"])
-            st.metric("Next predicted train", f'{station_rows[0]["minutes"]:.1f} min')
+            st.metric("Next predicted train at retrieval", f'{station_rows[0]["minutes"]:.1f} min')
             st.caption(f"{len(station_rows)} predictions currently returned for {station}. "
                        "Vehicles can appear more than once across stations.")
             st.subheader("3D train approach")
