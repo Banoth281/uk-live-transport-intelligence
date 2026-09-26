@@ -16,12 +16,16 @@ A real-time data engineering platform that ingests live Transport for London (Tf
 > The separate **Data pipeline analytics** tab connects to your configured
 > FastAPI service or displays a clearly labelled saved portfolio snapshot.
 
-The live tab also includes an interactive **3D train approach**. Choose one of
-the predicted services below the scene to watch its illustrated approach and
+The live tab also includes an interactive **3D train approach**. Select any of
+the 11 Underground lines, Elizabeth line, DLR, six named Overground lines or
+Tram in one selector. Choose a station and one of its currently predicted
+services below the scene to watch its illustrated approach and
 countdown. The animation is calculated from TfL's expected arrival time in
 your browser, so it is **not a real train location or a route trace**. When a
 prediction passes, refresh the TfL feed for updated service information.
 The scene is self-contained HTML Canvas and needs no mapping or 3D API key.
+Some lines may have no active arrival predictions at certain times; the site
+shows an empty state in that case.
 
 ---
 

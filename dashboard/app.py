@@ -8,7 +8,7 @@ import requests
 import streamlit as st
 import streamlit.components.v1 as components
 
-from live_tfl import LINES, fetch_arrivals
+from live_tfl import LINES, LINE_COLOURS, LINE_GROUPS, fetch_arrivals
 from train_scene import render_train_scene
 
 
@@ -72,7 +72,11 @@ with live_tab:
     )
     controls, refresh = st.columns([3, 1])
     with controls:
-        line_name = st.selectbox("Tube line", list(LINES))
+        line_name = st.selectbox(
+            "TfL rail line / route", list(LINES), index=list(LINES).index("Victoria"),
+            format_func=lambda name: f"{LINE_GROUPS[name]} · {name}",
+        )
+        st.caption("Underground, Elizabeth line, DLR, six Overground lines and Tram. Select a line to load its current predictions.")
     with refresh:
         if st.button("Refresh TfL feed"):
             load_live_line.clear()
@@ -85,7 +89,7 @@ with live_tab:
     else:
         st.success(f"TfL response retrieved at {retrieved_at:%d %b %Y, %H:%M:%S} UTC")
         if not predictions:
-            st.info("TfL returned no usable predictions for this line at this time.")
+            st.info("TfL returned no usable arrival predictions for this line right now. Some routes do not run at all hours or may not publish predictions. Try another line or refresh later.")
         else:
             station_names = sorted({row["station"] for row in predictions})
             station = st.selectbox("Station", station_names)
@@ -96,7 +100,10 @@ with live_tab:
                        "Vehicles can appear more than once across stations.")
             st.subheader("3D train approach")
             st.caption("Select a predicted train in the scene. Its animated approach represents the countdown, not its real position.")
-            components.html(render_train_scene(line_name, station, station_rows, retrieved_at), height=565, scrolling=False)
+            components.html(render_train_scene(
+                line_name, station, station_rows, retrieved_at,
+                mode=LINE_GROUPS[line_name], accent=LINE_COLOURS[line_name],
+            ), height=565, scrolling=False)
             st.subheader("Arrival details")
             table = pd.DataFrame(station_rows)[
                 ["destination", "minutes", "platform", "expected_arrival"]

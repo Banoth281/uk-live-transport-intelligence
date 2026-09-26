@@ -3,12 +3,42 @@ from datetime import datetime, timezone
 import math
 
 TFL_URL = "https://api.tfl.gov.uk/Line/{line_id}/Arrivals"
+# TfL rail service IDs. Keep one selector with a visible mode label in the app.
+LINE_GROUPS = {
+    "Bakerloo": "Underground", "Central": "Underground",
+    "Circle": "Underground", "District": "Underground",
+    "Hammersmith & City": "Underground", "Jubilee": "Underground",
+    "Metropolitan": "Underground", "Northern": "Underground",
+    "Piccadilly": "Underground", "Victoria": "Underground",
+    "Waterloo & City": "Underground",
+    "Elizabeth line": "Elizabeth line", "DLR": "DLR",
+    "Lioness": "Overground", "Mildmay": "Overground",
+    "Windrush": "Overground", "Weaver": "Overground",
+    "Suffragette": "Overground", "Liberty": "Overground",
+    "Tram": "Tram",
+}
 LINES = {
-    "Victoria": "victoria",
-    "Northern": "northern",
-    "Central": "central",
-    "Piccadilly": "piccadilly",
-    "Jubilee": "jubilee",
+    "Bakerloo": "bakerloo", "Central": "central", "Circle": "circle",
+    "District": "district", "Hammersmith & City": "hammersmith-city",
+    "Jubilee": "jubilee", "Metropolitan": "metropolitan",
+    "Northern": "northern", "Piccadilly": "piccadilly",
+    "Victoria": "victoria", "Waterloo & City": "waterloo-city",
+    "Elizabeth line": "elizabeth", "DLR": "dlr",
+    "Lioness": "lioness", "Mildmay": "mildmay",
+    "Windrush": "windrush", "Weaver": "weaver",
+    "Suffragette": "suffragette", "Liberty": "liberty", "Tram": "tram",
+}
+# Illustrative accents inspired by the TfL network palette.
+LINE_COLOURS = {
+    "Bakerloo": "#b36305", "Central": "#e32017", "Circle": "#ffd300",
+    "District": "#00782a", "Hammersmith & City": "#f3a9bb",
+    "Jubilee": "#a0a5a9", "Metropolitan": "#9b0056",
+    "Northern": "#babfc6", "Piccadilly": "#003688",
+    "Victoria": "#0098d4", "Waterloo & City": "#95cdba",
+    "Elizabeth line": "#6950a1", "DLR": "#00a4a7",
+    "Lioness": "#f6c443", "Mildmay": "#438cca",
+    "Windrush": "#e43c46", "Weaver": "#a54460",
+    "Suffragette": "#4da68b", "Liberty": "#adb7c7", "Tram": "#71ad43",
 }
 
 

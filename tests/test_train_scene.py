@@ -18,6 +18,15 @@ class TrainSceneTests(unittest.TestCase):
         self.assertIn("2026-09-26T20:00:00Z", scene)
         self.assertIn("not GPS or actual train position", scene)
 
+    def test_scene_uses_selected_service_mode_and_colour(self):
+        scene = render_train_scene("DLR", "Bank", [{
+            "destination": "Lewisham", "platform": "Platform 2",
+            "expected_arrival": "2026-09-26T20:00:00Z", "minutes": 2.0,
+        }], datetime(2026, 9, 26, 19, 58, tzinfo=timezone.utc),
+            mode="DLR", accent="#00a4a7")
+        self.assertIn('"mode": "DLR"', scene)
+        self.assertIn('"accent": "#00a4a7"', scene)
+
 
 if __name__ == "__main__":
     unittest.main()

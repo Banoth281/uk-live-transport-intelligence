@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timezone
 
-from dashboard.live_tfl import fetch_arrivals, normalise_arrivals
+from dashboard.live_tfl import LINES, LINE_COLOURS, LINE_GROUPS, fetch_arrivals, normalise_arrivals
 
 
 class LiveTfLTests(unittest.TestCase):
@@ -24,6 +24,14 @@ class LiveTfLTests(unittest.TestCase):
             normalise_arrivals({"error": "unavailable"})
         with self.assertRaises(ValueError):
             fetch_arrivals("../other")
+
+    def test_rail_catalogue_has_all_supported_modes_and_colours(self):
+        self.assertEqual(len(LINES), 20)
+        self.assertEqual(len(set(LINES.values())), len(LINES))
+        self.assertEqual(set(LINES), set(LINE_GROUPS) & set(LINE_COLOURS))
+        self.assertEqual(LINES["Waterloo & City"], "waterloo-city")
+        self.assertEqual(LINES["Elizabeth line"], "elizabeth")
+        self.assertEqual(LINES["Liberty"], "liberty")
 
     def test_excludes_expired_predictions_and_uses_expected_time(self):
         now = datetime(2026, 9, 26, 19, 48, 54, tzinfo=timezone.utc)
