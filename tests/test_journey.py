@@ -1,6 +1,7 @@
 import unittest
 
-from dashboard.journey import search_stations, fetch_journeys, fetch_line_status, normalise_journeys
+from dashboard.journey import (JourneyDisambiguation, search_stations, fetch_journeys,
+                               fetch_line_status, normalise_journeys)
 from dashboard.journey_scene import render_journey_scene
 
 
@@ -64,8 +65,12 @@ class JourneyTests(unittest.TestCase):
         self.assertIn("/940GZZLUWMS/to/940GZZLUBNK", session.calls[0][0])
 
     def test_disambiguation_and_invalid_ids_are_explicit(self):
-        with self.assertRaises(ValueError):
-            normalise_journeys({"fromLocationDisambiguation": {"disambiguationOptions": []}})
+        with self.assertRaises(JourneyDisambiguation) as context:
+            normalise_journeys({"fromLocationDisambiguation": {"disambiguationOptions": [
+                {"parameterValue": "51.501,-0.123", "place": {"commonName": "Westminster Underground Station", "placeType": "StopPoint"}}
+            ]}})
+        self.assertEqual(context.exception.from_options[0]["name"], "Westminster Underground Station")
+        self.assertEqual(context.exception.from_options[0]["value"], "51.501,-0.123")
         with self.assertRaises(ValueError):
             fetch_journeys("../admin", "940GZZLUBNK", session=Session(JOURNEYS))
         with self.assertRaises(ValueError):

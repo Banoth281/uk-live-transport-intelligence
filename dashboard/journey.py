@@ -1,9 +1,48 @@
 """TfL station lookup and rail journey planning for the public dashboard."""
 from datetime import datetime, timezone
 from urllib.parse import quote
+import re
 
 API = "https://api.tfl.gov.uk"
 RAIL_MODES = "tube,dlr,overground,elizabeth-line,tram"
+
+
+class JourneyDisambiguation(ValueError):
+    def __init__(self, from_options, to_options):
+        super().__init__("TfL needs a more precise start or destination.")
+        self.from_options = from_options
+        self.to_options = to_options
+
+
+def _valid_location(value):
+    if not isinstance(value, str) or len(value) > 60:
+        return False
+    if re.fullmatch(r"[A-Za-z0-9-]{2,60}", value):
+        return True
+    match = re.fullmatch(r"(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)", value)
+    if match:
+        return -90 <= float(match[1]) <= 90 and -180 <= float(match[2]) <= 180
+    return False
+
+
+def _options(data):
+    if not isinstance(data, dict):
+        return []
+    candidates = data.get("disambiguationOptions") or []
+    if not isinstance(candidates, list):
+        return []
+    result, seen = [], set()
+    for option in candidates:
+        if not isinstance(option, dict):
+            continue
+        value = option.get("parameterValue")
+        place = option.get("place") or {}
+        name = place.get("commonName") if isinstance(place, dict) else None
+        if not _valid_location(value) or not isinstance(name, str) or not name or value in seen:
+            continue
+        seen.add(value)
+        result.append({"value": value, "name": name, "type": str(place.get("placeType") or "")})
+    return result
 
 
 def _client(session):
@@ -46,15 +85,12 @@ def search_stations(query, *, api_key=None, session=None):
 
 def normalise_journeys(payload):
     if not isinstance(payload, dict) or not isinstance(payload.get("journeys"), list):
-        keys = ", ".join(sorted(payload.keys())) if isinstance(payload, dict) else type(payload).__name__
-        details = []
         if isinstance(payload, dict):
-            for side in ("fromLocationDisambiguation", "toLocationDisambiguation"):
-                data = payload.get(side) or {}
-                if isinstance(data, dict):
-                    options = data.get("disambiguationOptions") or []
-                    details.append(f"{side}: {repr(options[:2])[:700]}")
-        raise ValueError(f"TfL did not return journey options (response fields: {keys}; {'; '.join(details)}).")
+            start = _options(payload.get("fromLocationDisambiguation"))
+            end = _options(payload.get("toLocationDisambiguation"))
+            if start or end:
+                raise JourneyDisambiguation(start, end)
+        raise ValueError("TfL did not return journey options for those stations.")
     result = []
     for journey in payload["journeys"][:5]:
         if not isinstance(journey, dict) or not isinstance(journey.get("legs"), list):
@@ -104,8 +140,7 @@ def normalise_journeys(payload):
 
 def fetch_journeys(from_id, to_id, *, api_key=None, session=None):
     # Only station IDs from the search result should be sent here.
-    if not all(isinstance(value, str) and 2 <= len(value) <= 60
-               and value.replace("-", "").isalnum() for value in (from_id, to_id)):
+    if not all(_valid_location(value) for value in (from_id, to_id)):
         raise ValueError("Choose stations from the search results.")
     if from_id == to_id:
         raise ValueError("Choose two different stations.")

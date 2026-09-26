@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 from live_tfl import LINES, LINE_COLOURS, LINE_GROUPS, fetch_arrivals
 from train_scene import render_train_scene
-from journey import search_stations, fetch_journeys, fetch_line_status
+from journey import JourneyDisambiguation, search_stations, fetch_journeys, fetch_line_status
 from journey_scene import render_journey_scene
 
 
@@ -74,6 +74,48 @@ def load_pipeline_data():
     )
 
 
+def request_route(from_id, to_id, from_name, to_name, *, second_try=False):
+    try:
+        routes, planned_at = plan_journey(from_id, to_id)
+        ids = tuple(sorted({leg["line_id"] for route in routes for leg in route["legs"] if leg["line_id"]}))
+        try:
+            statuses = load_line_status(ids)
+            status_available = True
+        except (requests.RequestException, ValueError):
+            statuses, status_available = {}, False
+        st.session_state.pop("disambiguation", None)
+        st.session_state["planned_routes"] = {
+            "routes": routes, "retrieved": planned_at,
+            "statuses": statuses, "status_available": status_available,
+            "from": from_name, "to": to_name,
+        }
+    except JourneyDisambiguation as exc:
+        st.session_state.pop("planned_routes", None)
+        if second_try:
+            st.session_state.pop("disambiguation", None)
+            st.warning("TfL still needs a more precise location. Try another station match.")
+        else:
+            def ranked(options, name):
+                term = name.casefold()
+                return sorted(options, key=lambda option: (
+                    not option["name"].casefold().startswith(term),
+                    "station" not in option["name"].casefold(),
+                    option["name"].casefold(),
+                ))[:40]
+            st.session_state["disambiguation"] = {
+                "from_options": ranked(exc.from_options, from_name),
+                "to_options": ranked(exc.to_options, to_name),
+                "from_id": from_id, "to_id": to_id,
+                "from_name": from_name, "to_name": to_name,
+            }
+    except ValueError as exc:
+        st.session_state.pop("planned_routes", None)
+        st.warning(str(exc))
+    except (requests.RequestException, KeyError):
+        st.session_state.pop("planned_routes", None)
+        st.error("TfL could not plan this journey right now. Try different stations or retry later.")
+
+
 st.title("🚇 London Transport Intelligence")
 st.write(
     "Plan a TfL rail journey, explore current arrival predictions, then inspect the separate "
@@ -91,6 +133,7 @@ with journey_tab:
         search_clicked = st.form_submit_button("Find stations", type="primary")
     if search_clicked:
         st.session_state.pop("planned_routes", None)
+        st.session_state.pop("disambiguation", None)
         try:
             st.session_state["station_matches"] = (find_stations(from_query), find_stations(to_query))
         except ValueError as exc:
@@ -112,26 +155,23 @@ with journey_tab:
             to_id = right.selectbox("Choose the destination station", [s["id"] for s in to_matches],
                                     format_func=lambda sid: next(s["name"] for s in to_matches if s["id"] == sid))
             if st.button("Show TfL journeys", type="primary"):
-                try:
-                    routes, planned_at = plan_journey(from_id, to_id)
-                    ids = tuple(sorted({leg["line_id"] for route in routes for leg in route["legs"] if leg["line_id"]}))
-                    try:
-                        statuses = load_line_status(ids)
-                        status_available = True
-                    except (requests.RequestException, ValueError):
-                        statuses, status_available = {}, False
-                    st.session_state["planned_routes"] = {
-                        "routes": routes, "retrieved": planned_at,
-                        "statuses": statuses, "status_available": status_available,
-                        "from": next(s["name"] for s in from_matches if s["id"] == from_id),
-                        "to": next(s["name"] for s in to_matches if s["id"] == to_id),
-                    }
-                except ValueError as exc:
-                    st.session_state.pop("planned_routes", None)
-                    st.warning(str(exc))
-                except (requests.RequestException, KeyError):
-                    st.session_state.pop("planned_routes", None)
-                    st.error("TfL could not plan this journey right now. Try different stations or retry later.")
+                request_route(from_id, to_id,
+                              next(s["name"] for s in from_matches if s["id"] == from_id),
+                              next(s["name"] for s in to_matches if s["id"] == to_id))
+
+    ambiguous = st.session_state.get("disambiguation")
+    if ambiguous:
+        st.warning("TfL found several places with similar names. Confirm the precise stations below.")
+        left, right = st.columns(2)
+        from_opts, to_opts = ambiguous["from_options"], ambiguous["to_options"]
+        from_choice = left.selectbox("Confirm start location", range(len(from_opts)),
+                                     format_func=lambda i: f'{from_opts[i]["name"]} · {from_opts[i]["type"]}') if from_opts else None
+        to_choice = right.selectbox("Confirm destination location", range(len(to_opts)),
+                                    format_func=lambda i: f'{to_opts[i]["name"]} · {to_opts[i]["type"]}') if to_opts else None
+        if st.button("Confirm locations and plan"):
+            start = from_opts[from_choice] if from_opts else {"value": ambiguous["from_id"], "name": ambiguous["from_name"]}
+            end = to_opts[to_choice] if to_opts else {"value": ambiguous["to_id"], "name": ambiguous["to_name"]}
+            request_route(start["value"], end["value"], start["name"], end["name"], second_try=True)
 
     planned = st.session_state.get("planned_routes")
     if planned:
