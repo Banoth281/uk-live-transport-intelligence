@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timezone
 
 from dashboard.live_tfl import fetch_arrivals, normalise_arrivals
 
@@ -23,6 +24,17 @@ class LiveTfLTests(unittest.TestCase):
             normalise_arrivals({"error": "unavailable"})
         with self.assertRaises(ValueError):
             fetch_arrivals("../other")
+
+    def test_excludes_expired_predictions_and_uses_expected_time(self):
+        now = datetime(2026, 9, 26, 19, 48, 54, tzinfo=timezone.utc)
+        rows = normalise_arrivals([
+            {"stationName": "Angel", "timeToStation": 40,
+             "expectedArrival": "2026-09-26T19:48:31Z"},
+            {"stationName": "Angel", "timeToStation": 60,
+             "expectedArrival": "2026-09-26T19:50:24Z"},
+        ], now=now)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["minutes"], 1.5)
 
     def test_fetch_uses_timeout_and_records_retrieval_time(self):
         class Response:

@@ -65,8 +65,8 @@ live_tab, pipeline_tab = st.tabs(["Live TfL arrivals", "Data pipeline analytics"
 with live_tab:
     st.subheader("Next predicted arrivals")
     st.caption(
-        "Direct TfL Unified API feed. Times are predictions, not actual arrivals; "
-        "they may change. The station list reflects the selected line's current API response."
+        "Direct TfL Unified API feed. Times are predictions as of the displayed retrieval time, "
+        "not actual arrivals; they may change. Expired predictions are removed."
     )
     controls, refresh = st.columns([3, 1])
     with controls:
