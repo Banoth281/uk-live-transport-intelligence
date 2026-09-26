@@ -11,8 +11,10 @@
 
 A real-time data engineering platform that ingests live Transport for London (TfL) arrival predictions, streams events through Redpanda/Kafka, stores them in PostgreSQL, transforms the data with dbt, exposes analytical endpoints through FastAPI, and presents transport intelligence through an interactive Streamlit dashboard.
 
-> **Public demo:** the **Live TfL arrivals** tab calls TfL's Unified API
-> directly, with a station picker, retrieval time and explicit unavailable state.
+> **Public demo:** the **Plan a journey** tab searches TfL stations and shows
+> current station-to-station rail itineraries, changes, leg details and service
+> messages. The **Live TfL arrivals** tab calls TfL's Unified API directly,
+> with a station picker, retrieval time and explicit unavailable state.
 > The separate **Data pipeline analytics** tab connects to your configured
 > FastAPI service or displays a clearly labelled saved portfolio snapshot.
 
@@ -183,7 +185,16 @@ Tests include:
 
 ## 📊 Dashboard
 
-The public dashboard has two distinct tabs. **Live TfL arrivals** retrieves
+The public dashboard has three distinct tabs. **Plan a journey** lets a visitor
+search two station names, choose exact TfL results, and request rail journey
+options. It shows duration, changes, leg-by-leg instructions, reported journey
+disruptions and a separate line status request when available. The illustrated
+route story lets visitors inspect each leg and TfL's listed stops. Its animation
+is decorative and does not track a train. Journey estimates and status may
+change; re-plan before travelling. TfL errors and ambiguous search results are
+shown explicitly, and no fixed journey is substituted for a live failure.
+
+**Live TfL arrivals** retrieves
 current predictions directly from the TfL Unified API. Pick a Tube line and
 station to see upcoming predicted arrivals, destinations and platforms.
 Responses are cached for 30 seconds; **Refresh TfL feed** requests an update.

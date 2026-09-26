@@ -10,6 +10,8 @@ import streamlit.components.v1 as components
 
 from live_tfl import LINES, LINE_COLOURS, LINE_GROUPS, fetch_arrivals
 from train_scene import render_train_scene
+from journey import search_stations, fetch_journeys, fetch_line_status
+from journey_scene import render_journey_scene
 
 
 API_BASE_URL = os.getenv("API_BASE_URL", "").rstrip("/")
@@ -28,6 +30,21 @@ def load_demo_data():
 @st.cache_data(ttl=30)
 def load_live_line(line_id):
     return fetch_arrivals(line_id, api_key=TFL_API_KEY)
+
+
+@st.cache_data(ttl=600)
+def find_stations(query):
+    return search_stations(query, api_key=TFL_API_KEY)
+
+
+@st.cache_data(ttl=60)
+def plan_journey(from_id, to_id):
+    return fetch_journeys(from_id, to_id, api_key=TFL_API_KEY)
+
+
+@st.cache_data(ttl=60)
+def load_line_status(ids):
+    return fetch_line_status(ids, api_key=TFL_API_KEY)
 
 
 @st.cache_data(ttl=20)
@@ -59,10 +76,104 @@ def load_pipeline_data():
 
 st.title("🚇 London Transport Intelligence")
 st.write(
-    "Explore current TfL arrival predictions, then inspect the separate "
+    "Plan a TfL rail journey, explore current arrival predictions, then inspect the separate "
     "Kafka → PostgreSQL → dbt → FastAPI analytics project."
 )
-live_tab, pipeline_tab = st.tabs(["Live TfL arrivals", "Data pipeline analytics"])
+journey_tab, live_tab, pipeline_tab = st.tabs(["Plan a journey", "Live TfL arrivals", "Data pipeline analytics"])
+
+with journey_tab:
+    st.subheader("Plan your route")
+    st.caption("Search two stations, select the exact TfL matches, then compare current journey options. The route animation is illustrative.")
+    with st.form("station_search"):
+        from_col, to_col = st.columns(2)
+        from_query = from_col.text_input("From station", value="Westminster")
+        to_query = to_col.text_input("To station", value="Bank")
+        search_clicked = st.form_submit_button("Find stations", type="primary")
+    if search_clicked:
+        st.session_state.pop("planned_routes", None)
+        try:
+            st.session_state["station_matches"] = (find_stations(from_query), find_stations(to_query))
+        except ValueError as exc:
+            st.session_state.pop("station_matches", None)
+            st.error(str(exc))
+        except (requests.RequestException, KeyError):
+            st.session_state.pop("station_matches", None)
+            st.error("TfL station search is unavailable right now. Please retry later.")
+
+    matches = st.session_state.get("station_matches")
+    if matches:
+        from_matches, to_matches = matches
+        if not from_matches or not to_matches:
+            st.info("No matching rail stations were found for one or both searches. Try a longer station name.")
+        else:
+            left, right = st.columns(2)
+            from_id = left.selectbox("Choose the start station", [s["id"] for s in from_matches],
+                                     format_func=lambda sid: next(s["name"] for s in from_matches if s["id"] == sid))
+            to_id = right.selectbox("Choose the destination station", [s["id"] for s in to_matches],
+                                    format_func=lambda sid: next(s["name"] for s in to_matches if s["id"] == sid))
+            if st.button("Show TfL journeys", type="primary"):
+                try:
+                    routes, planned_at = plan_journey(from_id, to_id)
+                    ids = tuple(sorted({leg["line_id"] for route in routes for leg in route["legs"] if leg["line_id"]}))
+                    try:
+                        statuses = load_line_status(ids)
+                        status_available = True
+                    except (requests.RequestException, ValueError):
+                        statuses, status_available = {}, False
+                    st.session_state["planned_routes"] = {
+                        "routes": routes, "retrieved": planned_at,
+                        "statuses": statuses, "status_available": status_available,
+                        "from": next(s["name"] for s in from_matches if s["id"] == from_id),
+                        "to": next(s["name"] for s in to_matches if s["id"] == to_id),
+                    }
+                except ValueError as exc:
+                    st.session_state.pop("planned_routes", None)
+                    st.warning(str(exc))
+                except (requests.RequestException, KeyError):
+                    st.session_state.pop("planned_routes", None)
+                    st.error("TfL could not plan this journey right now. Try different stations or retry later.")
+
+    planned = st.session_state.get("planned_routes")
+    if planned:
+        st.success(f'TfL journey options retrieved at {planned["retrieved"]:%d %b %Y, %H:%M:%S} UTC')
+        routes = planned["routes"]
+        if not routes:
+            st.info("TfL returned no journeys for this station pair right now. Try another route or time.")
+        else:
+            st.caption(f'{planned["from"]} → {planned["to"]}. TfL estimates and service conditions can change; refresh the plan before travel.')
+            selected = st.selectbox("Journey option", range(len(routes)), format_func=lambda i:
+                                    f'Option {i+1} · {routes[i]["duration"] if routes[i]["duration"] is not None else "?"} min · {routes[i]["changes"]} changes')
+            route = routes[selected]
+            a, b, c = st.columns(3)
+            a.metric("Estimated duration", f'{route["duration"]} min' if route["duration"] is not None else "Unavailable")
+            b.metric("Changes", route["changes"])
+            c.metric("Legs", len(route["legs"]))
+            st.caption(f'TfL itinerary: {str(route["departure"] or "?")[11:16]} departure · {str(route["arrival"] or "?")[11:16]} arrival (times as returned by TfL).')
+            if route["disrupted"]:
+                st.warning("TfL flags a disruption or planned work on this option. Read the affected leg below.")
+            st.subheader("Illustrated route story")
+            components.html(render_journey_scene(route, colours=LINE_COLOURS), height=580, scrolling=False)
+            st.subheader("Step-by-step directions")
+            for index, leg in enumerate(route["legs"], 1):
+                title = f'{index}. {leg["line"] or leg["mode"]}: {leg["from"]} → {leg["to"]}'
+                with st.expander(title, expanded=index == 1):
+                    st.write(leg["instruction"] or "Follow TfL directions for this leg.")
+                    st.caption(f'{leg["duration"] if leg["duration"] is not None else "?"} min · {leg["mode"]}')
+                    if leg["stops"]:
+                        st.write("Stops listed by TfL: " + " → ".join(leg["stops"]))
+                    if leg["disrupted"]:
+                        st.warning("TfL reports an issue or planned work for this leg.")
+                        for alert in leg["alerts"]:
+                            st.write(alert)
+                    if leg["line_id"]:
+                        status = planned["statuses"].get(leg["line_id"])
+                        if status:
+                            st.write(f'Line status: {status["status"]}')
+                            if status["reason"]:
+                                st.write(status["reason"])
+            if not planned["status_available"]:
+                st.caption("Live line status is unavailable; itinerary alerts above are from the journey response. Check TfL before travel.")
+    st.markdown("[TfL Journey Planner and Unified API](https://tfl.gov.uk/info-for/open-data-users/unified-api)")
 
 with live_tab:
     st.subheader("Next predicted arrivals")
