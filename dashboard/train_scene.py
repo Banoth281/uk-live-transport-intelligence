@@ -32,7 +32,7 @@ _HTML = r"""<!doctype html>
 .shell{border:1px solid #24415d;border-radius:20px;overflow:hidden;background:#101e34;box-shadow:0 16px 40px #03091455}
 .head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 20px;background:#0d1a2e}
 .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8fb2d3}.title{font-size:20px;font-weight:750;margin-top:3px}
-.badge{border-radius:40px;background:#123a32;border:1px solid #2f816c;color:#9df1cb;padding:7px 11px;white-space:nowrap;font-size:12px}
+.badge{border-radius:40px;background:color-mix(in srgb,var(--accent) 22%,#0d1a2e);border:1px solid var(--accent);color:#f3f8ff;padding:7px 11px;white-space:nowrap;font-size:12px}
 .scene{position:relative;height:370px;background:#06101e}.scene canvas{display:block;width:100%;height:100%}
 .overlay{position:absolute;top:14px;left:16px;padding:11px 14px;background:#091726d9;border:1px solid #47647e;border-radius:11px;max-width:min(70%,370px)}
 .overlay strong{display:block;font-size:17px;margin:3px 0}.overlay span{color:#a8c4db;font-size:12px}
@@ -40,7 +40,7 @@ _HTML = r"""<!doctype html>
 .count b{display:block;font-size:22px;color:#a9f4ec;font-variant-numeric:tabular-nums}.count small{color:#b8d2e5}
 .strip{display:flex;gap:8px;overflow:auto;padding:12px 16px;background:#0d1b30}
 button{border:1px solid #345575;background:#152b46;color:#e2efff;border-radius:10px;min-width:150px;text-align:left;padding:9px 12px;cursor:pointer;font:inherit}
-button:hover,button:focus-visible{border-color:#8cd2ea;outline:none}button.active{background:#174c61;border-color:#77d8df}button strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}button small{color:#b5cfe3}
+button:hover,button:focus-visible{border-color:var(--accent);outline:none}button.active{background:#174c61;border-color:var(--accent)}button strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}button small{color:#b5cfe3}
 .foot{padding:11px 17px;color:#a9c5da;font-size:12px;line-height:1.4;background:#10213a;border-top:1px solid #29445b}
 @media(max-width:600px){.head{padding:12px}.title{font-size:16px}.scene{height:310px}.overlay strong{font-size:14px}.count b{font-size:17px}}
 </style></head><body><section class="shell" aria-label="Illustrated 3D train approach">
@@ -55,6 +55,7 @@ button:hover,button:focus-visible{border-color:#8cd2ea;outline:none}button.activ
 const canvas=document.getElementById('scene'), ctx=canvas.getContext('2d');
 let selected=0, width=0,height=0, ratio=1;
 const $=id=>document.getElementById(id);
+document.documentElement.style.setProperty('--accent',feed.accent);
 $('station').textContent=feed.station;
 $('mode').textContent=feed.mode+' · live prediction explorer · illustrated scene';
 $('line').textContent=feed.line;

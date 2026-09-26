@@ -103,7 +103,7 @@ with live_tab:
             components.html(render_train_scene(
                 line_name, station, station_rows, retrieved_at,
                 mode=LINE_GROUPS[line_name], accent=LINE_COLOURS[line_name],
-            ), height=565, scrolling=False)
+            ), height=630, scrolling=False)
             st.subheader("Arrival details")
             table = pd.DataFrame(station_rows)[
                 ["destination", "minutes", "platform", "expected_arrival"]
