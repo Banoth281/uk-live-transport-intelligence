@@ -30,15 +30,16 @@ def search_stations(query, *, api_key=None, session=None):
     payload = response.json()
     if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
         raise ValueError("TfL returned unexpected station search results.")
-    stations, seen = [], set()
+    stations, seen, seen_names = [], set(), set()
     for match in payload["matches"]:
         if not isinstance(match, dict):
             continue
-        station_id, name = match.get("id"), match.get("name")
+        station_id, name = match.get("icsId") or match.get("id"), match.get("name")
         if (not isinstance(station_id, str) or not isinstance(name, str)
-                or not station_id or not name or station_id in seen):
+                or not station_id or not name or station_id in seen or name.casefold() in seen_names):
             continue
         seen.add(station_id)
+        seen_names.add(name.casefold())
         stations.append({"id": station_id, "name": name})
     return stations
 
