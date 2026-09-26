@@ -42,14 +42,17 @@ JOURNEYS = {"journeys": [{"duration": 12, "startDateTime": "2026-09-26T12:00:00+
 
 class JourneyTests(unittest.TestCase):
     def test_station_lookup_uses_exact_ids_and_encodes_query(self):
-        session = Session({"matches": [{"id": "940GZZLUWMS", "icsId": "1000266", "name": "Westminster"},
+        session = Session({"matches": [{"id": "HUBWSM", "name": "Westminster"},
+                                         {"id": "940GZZLUWSM", "icsId": "1000266", "name": "Westminster Underground Station"},
                                          {"id": "940GZZLUWMS", "name": "Westminster"},
                                          {"id": "", "name": "Invalid"}]})
         self.assertEqual(search_stations(" King's Cross ", session=session),
-                         [{"id": "1000266", "name": "Westminster"}])
+                         [{"id": "1000266", "name": "Westminster Underground Station"},
+                          {"id": "940GZZLUWMS", "name": "Westminster"}])
         self.assertIn("King%27s%20Cross", session.calls[0][0])
         self.assertEqual(session.calls[0][2], 10)
         self.assertIn("modes", session.calls[0][1])
+        self.assertEqual(session.calls[0][1]["includeHubs"], "false")
 
     def test_journeys_and_disruption_are_normalised_without_guessing(self):
         session = Session(JOURNEYS)

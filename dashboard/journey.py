@@ -62,7 +62,7 @@ def search_stations(query, *, api_key=None, session=None):
         raise ValueError("Enter 2 to 60 characters for each station.")
     response = _client(session).get(
         f"{API}/StopPoint/Search/{quote(query, safe='')}",
-        params={**_params(api_key), "modes": RAIL_MODES, "maxResults": 25},
+        params={**_params(api_key), "modes": RAIL_MODES, "maxResults": 25, "includeHubs": "false"},
         timeout=10,
     )
     response.raise_for_status()
@@ -74,8 +74,12 @@ def search_stations(query, *, api_key=None, session=None):
         if not isinstance(match, dict):
             continue
         station_id, name = match.get("icsId") or match.get("id"), match.get("name")
+        # HUB identifiers such as HUBWSM are valid for station pages but TfL's
+        # Journey Planner resolves them as fuzzy text. Search without hubs and
+        # keep only a station's ICS or individual NaPTAN identifier.
         if (not isinstance(station_id, str) or not isinstance(name, str)
-                or not station_id or not name or station_id in seen or name.casefold() in seen_names):
+                or not station_id or not name or station_id.upper().startswith("HUB")
+                or station_id in seen or name.casefold() in seen_names):
             continue
         seen.add(station_id)
         seen_names.add(name.casefold())
