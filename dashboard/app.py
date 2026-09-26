@@ -6,8 +6,10 @@ from pathlib import Path
 import pandas as pd
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 from live_tfl import LINES, fetch_arrivals
+from train_scene import render_train_scene
 
 
 API_BASE_URL = os.getenv("API_BASE_URL", "").rstrip("/")
@@ -92,6 +94,10 @@ with live_tab:
             st.metric("Next predicted train", f'{station_rows[0]["minutes"]:.1f} min')
             st.caption(f"{len(station_rows)} predictions currently returned for {station}. "
                        "Vehicles can appear more than once across stations.")
+            st.subheader("3D train approach")
+            st.caption("Select a predicted train in the scene. Its animated approach represents the countdown, not its real position.")
+            components.html(render_train_scene(line_name, station, station_rows, retrieved_at), height=565, scrolling=False)
+            st.subheader("Arrival details")
             table = pd.DataFrame(station_rows)[
                 ["destination", "minutes", "platform", "expected_arrival"]
             ].rename(columns={
