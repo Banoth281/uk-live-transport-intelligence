@@ -28,3 +28,7 @@ jobs:
       - name: Compile Python source
         run: |
           python -m compileall src dashboard
+
+      - name: Test live feed validation
+        run: |
+          python -m unittest discover -s tests -v

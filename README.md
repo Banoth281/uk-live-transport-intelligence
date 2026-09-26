@@ -11,10 +11,10 @@
 
 A real-time data engineering platform that ingests live Transport for London (TfL) arrival predictions, streams events through Redpanda/Kafka, stores them in PostgreSQL, transforms the data with dbt, exposes analytical endpoints through FastAPI, and presents transport intelligence through an interactive Streamlit dashboard.
 
-> **Recruiter demo:** the Streamlit dashboard automatically uses a representative
-> TfL snapshot when the local FastAPI service is unavailable. Follow the
-> [public demo deployment](#-deploy-the-public-recruiter-demo) steps to create a
-> shareable `streamlit.app` URL.
+> **Public demo:** the **Live TfL arrivals** tab calls TfL's Unified API
+> directly, with a station picker, retrieval time and explicit unavailable state.
+> The separate **Data pipeline analytics** tab connects to your configured
+> FastAPI service or displays a clearly labelled saved portfolio snapshot.
 
 ---
 
@@ -172,15 +172,27 @@ Tests include:
 
 ## 📊 Dashboard
 
-The Streamlit dashboard provides a real-time analytical view of TfL transport data, refreshing automatically every 30 seconds.
+The public dashboard has two distinct tabs. **Live TfL arrivals** retrieves
+current predictions directly from the TfL Unified API. Pick a Tube line and
+station to see upcoming predicted arrivals, destinations and platforms.
+Responses are cached for 30 seconds; **Refresh TfL feed** requests an update.
+The retrieval time is shown in UTC. If TfL is unavailable, the tab reports
+that error instead of displaying an old sample as live data. Predictions can
+change and are not actual arrivals. An API key is optional for low-volume
+demonstration use and may be configured as `TFL_API_KEY`; TfL applies usage
+limits. See [TfL's Unified API](https://tfl.gov.uk/info-for/open-data-users/unified-api).
+
+**Data pipeline analytics** shows metrics from your configured FastAPI service
+or a fixed saved snapshot when that service is unavailable. The saved snapshot
+has no current-data timestamp and should never be described as live conditions.
 
 ### Live Transport Overview
 
-The dashboard displays key operational metrics including:
+The pipeline analytics tab displays dataset metrics including:
 
 - Total arrival predictions
-- Active vehicles
-- Average passenger wait time
+- Unique vehicles in the stored dataset
+- Average predicted wait
 - Arrivals within three minutes
 - Station-level performance
 
@@ -302,9 +314,9 @@ uk-live-transport-intelligence/
 
 ## 🌐 Deploy the Public Recruiter Demo
 
-The public demo does not require Kafka, PostgreSQL, dbt or FastAPI. It uses the
-representative snapshot in `dashboard/demo_data.json`. When a reachable API is
-configured, the same dashboard automatically switches to live mode.
+The public demo does not require Kafka, PostgreSQL, dbt or FastAPI. Its first
+tab requests TfL predictions directly. The second tab uses the saved example
+in `dashboard/demo_data.json` until a reachable pipeline API is configured.
 
 1. Push this repository to GitHub.
 2. Sign in to [Streamlit Community Cloud](https://share.streamlit.io/) with GitHub.
@@ -319,19 +331,14 @@ configured, the same dashboard automatically switches to live mode.
 Streamlit will use `dashboard/requirements.txt`, keeping the hosted demo small
 and independent from the full engineering environment.
 
-After deployment, add the real URL near the top of this README:
-
-```markdown
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Open_Dashboard-FF4B4B?logo=streamlit&logoColor=white)](https://YOUR-APP.streamlit.app)
-```
-
-Replace `https://YOUR-APP.streamlit.app` with the URL created by Streamlit.
+The current demo URL is linked at the top of this README.
 
 ### Optional live API mode
 
 Set the `API_BASE_URL` environment variable to a publicly hosted FastAPI base
-URL. If that service is reachable, the dashboard displays live data; otherwise,
-it falls back safely to the portfolio snapshot.
+URL. If that service is reachable, the pipeline tab displays stored analytics;
+otherwise, it shows the clearly labelled portfolio snapshot. This setting
+does not affect the direct TfL arrivals tab. Do not expose API keys in source.
 
 ## 🚀 Running Locally
 

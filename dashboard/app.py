@@ -1,24 +1,31 @@
+"""Public transport explorer and clearly labelled engineering pipeline demo."""
 import json
 import os
-import time
 from pathlib import Path
 
 import pandas as pd
 import requests
 import streamlit as st
 
-DEFAULT_API_BASE_URL = "http://127.0.0.1:8000"
-API_BASE_URL = os.getenv("API_BASE_URL", DEFAULT_API_BASE_URL).rstrip("/")
+from live_tfl import LINES, fetch_arrivals
+
+
+API_BASE_URL = os.getenv("API_BASE_URL", "").rstrip("/")
+TFL_API_KEY = os.getenv("TFL_API_KEY")
 DEMO_DATA_PATH = Path(__file__).with_name("demo_data.json")
 
-st.set_page_config(page_title="UK Live Transport Intelligence", page_icon="🚇", layout="wide")
+st.set_page_config(page_title="London Transport Intelligence", page_icon="🚇", layout="wide")
 
 
 @st.cache_data
 def load_demo_data():
-    """Load a representative snapshot for the public portfolio demo."""
     with DEMO_DATA_PATH.open(encoding="utf-8") as demo_file:
         return json.load(demo_file)
+
+
+@st.cache_data(ttl=30)
+def load_live_line(line_id):
+    return fetch_arrivals(line_id, api_key=TFL_API_KEY)
 
 
 @st.cache_data(ttl=20)
@@ -28,95 +35,116 @@ def get_json(endpoint):
     return response.json()
 
 
-def load_transport_data():
-    """Prefer the live API and fall back safely when it is unavailable."""
-    try:
-        return (
-            get_json("/lines/victoria/performance"),
-            get_json("/stations/performance?limit=16"),
-            get_json("/arrivals/recent?limit=20"),
-            True,
-        )
-    except (requests.RequestException, ValueError, KeyError):
-        demo_data = load_demo_data()
-        return (
-            demo_data["line_performance"],
-            demo_data["station_performance"],
-            demo_data["recent_arrivals"],
-            False,
-        )
-
-
-st.title("🚇 UK Live Transport Intelligence")
-st.caption(
-    "TfL arrival analytics powered by Python, Kafka-compatible streaming, "
-    "PostgreSQL, dbt and FastAPI."
-)
-
-line, stations, arrivals, is_live = load_transport_data()
-
-st.sidebar.markdown("### Data Platform")
-st.sidebar.write("TfL API → Redpanda → PostgreSQL → dbt → FastAPI")
-
-if is_live:
-    st.sidebar.success("Live API connected")
-    refresh_seconds = st.sidebar.selectbox("Auto refresh", [10, 30, 60], index=1)
-else:
-    st.sidebar.info("Portfolio demo mode")
-    st.info(
-        "**Portfolio demo:** displaying a representative TfL data snapshot. "
-        "Run the complete pipeline locally to enable live streaming data."
+def load_pipeline_data():
+    if API_BASE_URL:
+        try:
+            return (
+                get_json("/lines/victoria/performance"),
+                get_json("/stations/performance?limit=16"),
+                get_json("/arrivals/recent?limit=20"),
+                True,
+            )
+        except (requests.RequestException, ValueError, KeyError):
+            st.warning("The pipeline API is unavailable. Showing the saved demonstration snapshot.")
+    sample = load_demo_data()
+    return (
+        sample["line_performance"],
+        sample["station_performance"],
+        sample["recent_arrivals"],
+        False,
     )
-    refresh_seconds = None
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Predictions", f'{line["prediction_count"]:,}')
-col2.metric("Active Vehicles", line["unique_vehicles"])
-col3.metric("Average Wait", f'{line["avg_wait_minutes"]} min')
-col4.metric("Arrivals ≤ 3 min", line["arrivals_within_3_minutes"])
 
-st.divider()
-stations_df = pd.DataFrame(stations)
-st.subheader("Station Performance")
-chart_df = stations_df[["station_name", "avg_wait_minutes"]].set_index("station_name")
-st.bar_chart(chart_df)
+st.title("🚇 London Transport Intelligence")
+st.write(
+    "Explore current TfL arrival predictions, then inspect the separate "
+    "Kafka → PostgreSQL → dbt → FastAPI analytics project."
+)
+live_tab, pipeline_tab = st.tabs(["Live TfL arrivals", "Data pipeline analytics"])
 
-st.divider()
-left, right = st.columns(2)
-station_columns = [
-    "station_name",
-    "avg_wait_minutes",
-    "unique_vehicles",
-    "arrivals_within_3_minutes",
-]
+with live_tab:
+    st.subheader("Next predicted arrivals")
+    st.caption(
+        "Direct TfL Unified API feed. Times are predictions, not actual arrivals; "
+        "they may change. The station list reflects the selected line's current API response."
+    )
+    controls, refresh = st.columns([3, 1])
+    with controls:
+        line_name = st.selectbox("Tube line", list(LINES))
+    with refresh:
+        if st.button("Refresh TfL feed"):
+            load_live_line.clear()
 
-with left:
-    st.subheader("Shortest Average Waits")
-    shortest = stations_df[station_columns].sort_values("avg_wait_minutes").head(8)
-    st.dataframe(shortest, width="stretch", hide_index=True)
+    try:
+        predictions, retrieved_at = load_live_line(LINES[line_name])
+    except (requests.RequestException, ValueError) as exc:
+        st.error("Live TfL predictions are unavailable right now. Please retry later.")
+        st.caption(f"Feed error: {type(exc).__name__}. No saved sample is presented as live.")
+    else:
+        st.success(f"TfL response retrieved at {retrieved_at:%d %b %Y, %H:%M:%S} UTC")
+        if not predictions:
+            st.info("TfL returned no usable predictions for this line at this time.")
+        else:
+            station_names = sorted({row["station"] for row in predictions})
+            station = st.selectbox("Station", station_names)
+            station_rows = [row for row in predictions if row["station"] == station]
+            station_rows.sort(key=lambda row: row["minutes"])
+            st.metric("Next predicted train", f'{station_rows[0]["minutes"]:.1f} min')
+            st.caption(f"{len(station_rows)} predictions currently returned for {station}. "
+                       "Vehicles can appear more than once across stations.")
+            table = pd.DataFrame(station_rows)[
+                ["destination", "minutes", "platform", "expected_arrival"]
+            ].rename(columns={
+                "destination": "Destination",
+                "minutes": "Minutes",
+                "platform": "Platform",
+                "expected_arrival": "TfL expected arrival (UTC)",
+            })
+            st.dataframe(table, width="stretch", hide_index=True)
+    st.markdown("[TfL Unified API and open data](https://tfl.gov.uk/info-for/open-data-users/unified-api)")
 
-with right:
-    st.subheader("Highest Average Waits")
-    longest = stations_df[station_columns].sort_values("avg_wait_minutes", ascending=False).head(8)
-    st.dataframe(longest, width="stretch", hide_index=True)
+with pipeline_tab:
+    st.subheader("Streaming pipeline analysis")
+    st.caption("TfL → Python → Redpanda/Kafka → PostgreSQL → dbt → FastAPI")
+    line, stations, arrivals, is_live = load_pipeline_data()
+    if is_live:
+        st.success("Connected to the configured pipeline API. Metrics reflect stored predictions.")
+    else:
+        st.info(
+            "**Saved portfolio snapshot.** These fixed example metrics are not current "
+            "TfL conditions. Run the full pipeline and configure API_BASE_URL for live "
+            "pipeline analytics. Use the first tab for direct live predictions."
+        )
 
-st.divider()
-st.subheader("Recent Arrival Predictions")
-arrivals_df = pd.DataFrame(arrivals)
-display_columns = [
-    "line_name",
-    "station_name",
-    "destination_name",
-    "direction",
-    "minutes_to_station",
-    "platform_name",
-    "wait_band",
-]
-st.dataframe(arrivals_df[display_columns], width="stretch", hide_index=True)
+    a, b, c, d = st.columns(4)
+    a.metric("Stored predictions" if is_live else "Sample predictions", f'{line["prediction_count"]:,}')
+    b.metric("Unique vehicles in dataset", line["unique_vehicles"])
+    c.metric("Average predicted wait", f'{line["avg_wait_minutes"]} min')
+    d.metric("Predictions ≤ 3 min", line["arrivals_within_3_minutes"])
+    st.caption(
+        "Pipeline metrics describe the stored dataset or saved sample, not the number "
+        "of trains operating across London now."
+    )
 
-if is_live and refresh_seconds:
-    st.caption(f"Live dashboard refreshes every {refresh_seconds} seconds.")
-    time.sleep(refresh_seconds)
-    st.rerun()
-else:
-    st.caption("Representative portfolio snapshot derived from the live data schema.")
+    stations_df = pd.DataFrame(stations)
+    if not stations_df.empty:
+        st.subheader("Station performance")
+        st.bar_chart(stations_df.set_index("station_name")["avg_wait_minutes"])
+        cols = ["station_name", "avg_wait_minutes", "unique_vehicles",
+                "arrivals_within_3_minutes"]
+        left, right = st.columns(2)
+        with left:
+            st.markdown("**Shortest average predicted waits**")
+            st.dataframe(stations_df[cols].sort_values("avg_wait_minutes").head(8),
+                         width="stretch", hide_index=True)
+        with right:
+            st.markdown("**Highest average predicted waits**")
+            st.dataframe(stations_df[cols].sort_values("avg_wait_minutes", ascending=False).head(8),
+                         width="stretch", hide_index=True)
+
+    arrivals_df = pd.DataFrame(arrivals)
+    if not arrivals_df.empty:
+        st.subheader("Recent stored predictions" if is_live else "Example predictions")
+        cols = ["line_name", "station_name", "destination_name", "direction",
+                "minutes_to_station", "platform_name", "wait_band"]
+        st.dataframe(arrivals_df[cols], width="stretch", hide_index=True)
